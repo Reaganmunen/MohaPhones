@@ -1,0 +1,3 @@
+.dev-status { height: 56px; border-radius: 16px; border: 1.5px solid var(--hd-line); font-weight: 600; background-color: #fafaf8; }
+.imei-cell { font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: .01em; }
+#devModal textarea, #devModal .form-select { border-radius: 14px; }
