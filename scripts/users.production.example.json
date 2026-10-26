@@ -1,0 +1,6 @@
+[
+  { "name": "Shop Owner",   "email": "owner@yourshop.co.ke",   "phone": "0712345678", "role": "admin" },
+  { "name": "Shop Manager", "email": "manager@yourshop.co.ke", "phone": "0722345678", "role": "manager" },
+  { "name": "Cashier One",  "email": "cashier1@yourshop.co.ke", "role": "cashier" },
+  { "name": "Stock Keeper", "email": "stock@yourshop.co.ke",   "role": "stock_keeper" }
+]

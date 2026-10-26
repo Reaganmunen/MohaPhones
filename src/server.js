@@ -7,8 +7,8 @@ assertConfig(); // stop immediately if JWT_SECRET is missing or weak
 
 const port = Number(process.env.PORT || 4000);
 const server = app.listen(port, () => {
-  console.log(`Maphones app:  http://localhost:${port}`);          // open this one in the browser
-  console.log(`HassDent API:  http://localhost:${port}/api/v1`);   // JSON only, needs a login token
+  console.log(`mohaaa_gadgets app:  http://localhost:${port}`);          // open this one in the browser
+  console.log(`API:  http://localhost:${port}/api/v1`);   // JSON only, needs a login token
 });
 
 function shutdown(signal) {

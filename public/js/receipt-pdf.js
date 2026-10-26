@@ -33,7 +33,7 @@
 
     // ---- shop header
     doc.setTextColor(17);
-    font('bold', 20); doc.text(t(shop.name || 'Maphones').toUpperCase(), W / 2, y, { align: 'center' }); y += 7;
+    font('bold', 20); doc.text(t(shop.name || 'mohaaa_gadgets').toUpperCase(), W / 2, y, { align: 'center' }); y += 7;
     font('normal', 9);
     if (shop.address) { doc.text(doc.splitTextToSize(t(shop.address), 150), W / 2, y, { align: 'center' }); y += 5; }
     [shop.phone, shop.email, shop.kra_pin ? 'PIN: ' + shop.kra_pin : ''].filter(Boolean).forEach((c) => { font('normal', 10); doc.text(t(c), W / 2, y, { align: 'center' }); y += 5; });

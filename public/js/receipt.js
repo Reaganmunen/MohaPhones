@@ -1,7 +1,7 @@
 /** Shared WhatsApp receipt helpers (POS + Sales pages). Exposes HD.receipt { text, waNumber, open }. */
 (function () {
   'use strict';
-  const SHOP_FALLBACK = { name: 'Maphones' };
+  const SHOP_FALLBACK = { name: 'mohaaa_gadgets' };
   const nf = new Intl.NumberFormat('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const kes = (n) => 'KES ' + nf.format(Number(n) || 0);
   const METHOD = { cash: 'Cash', mpesa: 'M-Pesa', card: 'Card', bank_transfer: 'Bank transfer' };

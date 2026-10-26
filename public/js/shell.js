@@ -88,7 +88,7 @@
   function renderSidebar() {
     const page = document.body.dataset.page;
     const u = Session.user() || {};
-    let html = '<a class="sb-brand" href="/dashboard.html" aria-label="Maphones home"><img src="/img/mark.png" alt=""><span class="sb-name">Maphones</span></a>';
+    let html = '<a class="sb-brand" href="/dashboard.html" aria-label="mohaaa_gadgets home"><img src="/img/mark.png" alt=""><span class="sb-name">mohaaa_gadgets</span></a>';
     let pendingSection = null, open = false;
     NAV.forEach((item) => {
       if (item.section) { pendingSection = item.section; return; }

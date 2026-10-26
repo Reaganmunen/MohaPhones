@@ -1,5 +1,5 @@
 /**
- * Maphones frontend core: session storage + fetch wrapper for the API.
+ * mohaaa_gadgets frontend core: session storage + fetch wrapper for the API.
  * Loaded on every page BEFORE the page's own script:  <script src="/js/api.js"></script>
  * Exposes one global:  HD  { api, Session, logout, config }
  */
@@ -10,7 +10,7 @@
     API_BASE: '/api/v1',
     LOGIN_PAGE: '/login.html',
     HOME_PAGE: '/dashboard.html', // where a successful login lands (built next)
-    SESSION_KEY: 'maphones.session',
+    SESSION_KEY: 'mohaaa.session',
   };
 
   class ApiError extends Error {

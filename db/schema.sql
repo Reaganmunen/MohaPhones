@@ -1,12 +1,12 @@
 -- =====================================================================================
--- Maphones: database schema for the phone & accessories shop (PostgreSQL 13+)
+-- mohaaa_gadgets: database schema for the phone & accessories shop (PostgreSQL 13+)
 --
 -- Run this ONCE on a brand-new, empty database:
---     createdb maphones
---     psql -d maphones -f db/schema.sql
+--     createdb Mohaphones
+--     psql -d Mohaphones -f db/schema.sql
 -- (or on a hosted database:  psql "$DATABASE_URL" -f db/schema.sql)
 --
--- It creates the shop tables, triggers and views carried over from the HassDent system,
+-- It creates the shop tables, triggers and views carried over from the earlier system,
 -- plus the phone-shop additions (IMEI register, warranty), and seeds the starting data
 -- (roles, permissions, tax rates, location, categories, brands).
 -- It does NOT create a user. Open the app and use the first-time "setup" screen to create
@@ -988,7 +988,7 @@ CREATE TABLE public.sales (
 
 CREATE TABLE public.shop_settings (
     id smallint DEFAULT 1 NOT NULL,
-    shop_name character varying(150) DEFAULT 'Hassdent'::character varying NOT NULL,
+    shop_name character varying(150) DEFAULT 'mohaaa_gadgets'::character varying NOT NULL,
     address text,
     phone character varying(20),
     email character varying(150),
@@ -2058,7 +2058,7 @@ ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id);
 
 -- =====================================================================================
--- MAPHONES ADDITIONS: IMEI / serial tracking and warranty
+-- PHONE-SHOP ADDITIONS: IMEI / serial tracking and warranty
 -- =====================================================================================
 ALTER TABLE products ADD COLUMN requires_imei BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE products ADD COLUMN warranty_months INT NOT NULL DEFAULT 0 CHECK (warranty_months >= 0);
@@ -2131,7 +2131,7 @@ INSERT INTO expense_categories (id, name) VALUES
   (1,'Rent'),(2,'Utilities'),(3,'Salaries'),(4,'Transport'),(5,'Marketing'),(6,'Licences & Permits'),
   (7,'Repairs & Maintenance'),(8,'Supplies'),(9,'Airtime & Internet'),(10,'Other');
 
-INSERT INTO shop_settings (id, shop_name, currency) VALUES (1, 'Maphones', 'KES');
+INSERT INTO shop_settings (id, shop_name, currency) VALUES (1, 'mohaaa_gadgets', 'KES');
 
 INSERT INTO categories (name) VALUES
   ('Smartphones'),('Feature Phones'),('Tablets'),('Smartwatches'),('Phone Cases & Covers'),('Screen Protectors'),

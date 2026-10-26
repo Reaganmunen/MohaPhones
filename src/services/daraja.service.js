@@ -57,7 +57,7 @@ async function stkPush({ phone, amount, accountReference, description }) {
     PartyB: process.env.MPESA_PARTY_B || shortcode,
     PhoneNumber: phone,
     CallBackURL: `${callbackBase}/api/v1/mpesa/callback/${need('MPESA_CALLBACK_SECRET')}`,
-    AccountReference: String(accountReference || 'Maphones').slice(0, 12),
+    AccountReference: String(accountReference || 'Mohaaa').slice(0, 12),
     TransactionDesc: String(description || 'Payment').slice(0, 13),
   });
 }

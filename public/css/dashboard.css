@@ -24,7 +24,7 @@
 .stat.dark { background: var(--hd-ink); color: #fff; }
 .stat.dark .s-label, .stat.dark .s-foot, .stat.dark .s-value small { color: rgba(255, 255, 255, .6); }
 .stat.dark .s-ico { background: var(--hd-lime); }
-.stat.dark::after { content: ''; position: absolute; right: -60px; top: -60px; width: 190px; height: 190px; background: radial-gradient(closest-side, rgba(61, 214, 245, .22), transparent); }
+.stat.dark::after { content: ''; position: absolute; right: -60px; top: -60px; width: 190px; height: 190px; background: radial-gradient(closest-side, rgba(255, 138, 31, .22), transparent); }
 .stat.amber .s-ico { background: #fff1d6; }
 .stat.sky .s-ico { background: #dff3f7; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 800; background: var(--hd-lime); color: var(--hd-ink); }

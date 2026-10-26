@@ -18,7 +18,7 @@
 .form-row .field select:focus,
 .form-row .field textarea:focus {
   outline: none; border-color: var(--hd-lime-deep); background: #fff;
-  box-shadow: 0 0 0 3px rgba(61, 214, 245, .25);
+  box-shadow: 0 0 0 3px rgba(255, 138, 31, .25);
 }
 .form-row .field textarea { resize: vertical; min-height: 70px; }
 
@@ -58,7 +58,7 @@
 }
 .search-wrap input:focus {
   outline: none; border-color: var(--hd-lime-deep); background: #fff;
-  box-shadow: 0 0 0 3px rgba(61, 214, 245, .25);
+  box-shadow: 0 0 0 3px rgba(255, 138, 31, .25);
 }
 
 #filter-group {

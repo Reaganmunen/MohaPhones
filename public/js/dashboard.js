@@ -8,7 +8,7 @@
 
   const state = { series: [], range: 30, chart: null };
   const PAY_LABEL = { cash: 'Cash', mpesa: 'M-Pesa', card: 'Card', bank_transfer: 'Bank transfer', loyalty: 'Loyalty points', cheque: 'Cheque' };
-  const PAY_COLOR = ['#1a1a1c', '#3dd6f5', '#1d6b8a', '#3fb6a2', '#f0a020', '#9a9aa2'];
+  const PAY_COLOR = ['#1a1a1c', '#ff8a1f', '#1d6b8a', '#3fb6a2', '#f0a020', '#9a9aa2'];
 
   // ------------------------------------------------------------------ header
   const user = Session.user() || {};
@@ -123,11 +123,11 @@
 
     box.innerHTML =
       `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Daily gross sales">` +
-      '<defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3dd6f5" stop-opacity=".55"/><stop offset="1" stop-color="#3dd6f5" stop-opacity="0"/></linearGradient></defs>' +
+      '<defs><linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a1f" stop-opacity=".55"/><stop offset="1" stop-color="#ff8a1f" stop-opacity="0"/></linearGradient></defs>' +
       `${grid}${xl}<path d="${area}" fill="url(#gArea)"/>` +
       `<path d="${line}" fill="none" stroke="#a6c20d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` +
       '<line id="c-guide" y1="' + m.t + '" y2="' + (m.t + ih) + '" stroke="#1a1a1c" stroke-width="1.5" stroke-dasharray="3 4" opacity="0"/>' +
-      '<circle id="c-dot" r="6" fill="#1a1a1c" stroke="#3dd6f5" stroke-width="3" opacity="0"/></svg>' +
+      '<circle id="c-dot" r="6" fill="#1a1a1c" stroke="#ff8a1f" stroke-width="3" opacity="0"/></svg>' +
       '<div class="chart-tip" id="c-tip"></div>' +
       (total === 0 ? `<div class="state-box" style="position:absolute;inset:0;pointer-events:none;background:rgba(255,255,255,.6)"><i class="ph-duotone ph-chart-line"></i><div>No sales in this period yet</div></div>` : '');
     state.chart = { data, W, m, iw, x, y };

@@ -29,7 +29,7 @@ exports.stkPush = wrap(async (req, res) => {
 
   const resp = await daraja.stkPush({
     phone: phone.slice(1), // Daraja wants 2547XXXXXXXX without the "+"
-    amount, accountReference: b.account_reference || 'Maphones', description: b.description || 'Payment',
+    amount, accountReference: b.account_reference || 'Mohaaa', description: b.description || 'Payment',
   });
   if (String(resp.ResponseCode) !== '0') {
     throw new AppError(resp.ResponseDescription || 'M-Pesa could not start the payment', 502, 'MPESA_ERROR', resp);

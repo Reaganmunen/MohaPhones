@@ -353,7 +353,7 @@
     return `<div class="rcpt">
       ${s.status === 'voided' ? '<div class="stamp">VOIDED</div>' : ''}
       <div class="shop">
-        <h1>${esc(shop.name || 'Maphones')}</h1>
+        <h1>${esc(shop.name || 'mohaaa_gadgets')}</h1>
         ${shop.address ? `<div class="addr">${esc(shop.address)}</div>` : ''}
         ${contact ? `<div class="contact">${contact}</div>` : ''}
       </div>
@@ -435,7 +435,7 @@
     const when = new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Nairobi', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(s.sold_at));
     const pays = (s.payments || []).filter((p) => p.status === 'completed');
     const balance = Number(s.balance) || 0;
-    const L = ['*' + (shop.name || 'Maphones') + '*'];
+    const L = ['*' + (shop.name || 'mohaaa_gadgets') + '*'];
     if (shop.address) L.push(shop.address);
     if (shop.phone) L.push('Tel: ' + shop.phone);
     L.push('', '*Receipt ' + s.sale_number + '*', when);

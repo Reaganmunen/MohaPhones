@@ -1,4 +1,4 @@
--- Maphones: phone & accessories shop additions.
+-- mohaaa_gadgets: phone & accessories shop additions.
 -- Run ONCE (it is safe to re-run) against the existing database, e.g.:
 --   psql "$DATABASE_URL" -f db/phone-shop-migration.sql
 
