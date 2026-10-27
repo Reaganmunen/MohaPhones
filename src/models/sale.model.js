@@ -200,11 +200,12 @@ async function createSale(input, db) {
 
     const { rows: [sale] } = await query(
       `INSERT INTO sales (customer_id, register_session_id, location_id, status, subtotal, discount_amount,
-                          loyalty_points_used, loyalty_discount, tax_total, total, notes, sold_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+                          loyalty_points_used, loyalty_discount, tax_total, total, notes, sold_by, walk_in_name, walk_in_phone)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
       [customer ? customer.id : null, input.register_session_id || null, location_id, status,
         fromCents(t.subtotal), fromCents(t.saleDiscount), t.points, fromCents(t.loyaltyDiscount), fromCents(t.tax), fromCents(t.total),
-        input.notes || null, input.sold_by || null], c);
+        input.notes || null, input.sold_by || null,
+        customer ? null : (input.customer_name || null), customer ? null : (input.customer_phone || null)], c);
 
     const items = [];
     for (const l of lines) {
@@ -393,7 +394,7 @@ async function getReturn(id, db) {
 // ------------------------------------------------------------------ reading
 async function getById(id, db) {
   const { rows: [sale] } = await query(
-    `SELECT s.*, c.full_name AS customer_name, c.phone AS customer_phone, u.name AS sold_by_name
+    `SELECT s.*, COALESCE(c.full_name, s.walk_in_name) AS customer_name, COALESCE(c.phone, s.walk_in_phone) AS customer_phone, u.name AS sold_by_name
        FROM sales s LEFT JOIN customers c ON c.id = s.customer_id LEFT JOIN users u ON u.id = s.sold_by WHERE s.id = $1`, [id], db);
   if (!sale) throw notFound('Sale');
   const [items, payments, returns] = await Promise.all([
@@ -411,11 +412,11 @@ async function list({ from, to, customer_id, status, payment_status, search, lim
   if (customer_id) { params.push(customer_id); where.push(`s.customer_id = $${params.length}`); }
   if (status) { params.push(status); where.push(`s.status = $${params.length}`); }
   if (payment_status) { params.push(payment_status); where.push(`s.payment_status = $${params.length}`); }
-  if (search) { params.push(`%${search}%`); where.push(`(s.sale_number ILIKE $${params.length} OR c.full_name ILIKE $${params.length} OR c.phone ILIKE $${params.length})`); }
+  if (search) { params.push(`%${search}%`); where.push(`(s.sale_number ILIKE $${params.length} OR c.full_name ILIKE $${params.length} OR c.phone ILIKE $${params.length} OR s.walk_in_name ILIKE $${params.length} OR s.walk_in_phone ILIKE $${params.length})`); }
   params.push(limit, offset);
   const { rows } = await query(
     `SELECT s.id, s.sale_number, s.status, s.payment_status, s.total, s.amount_paid, s.sold_at,
-            c.full_name AS customer_name, u.name AS sold_by_name, COUNT(*) OVER()::INT AS total_count
+            COALESCE(c.full_name, s.walk_in_name) AS customer_name, u.name AS sold_by_name, COUNT(*) OVER()::INT AS total_count
        FROM sales s LEFT JOIN customers c ON c.id = s.customer_id LEFT JOIN users u ON u.id = s.sold_by
       ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY s.sold_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`, params, db);
   return { items: rows.map(({ total_count, ...r }) => r), total: rows[0] ? rows[0].total_count : 0 };

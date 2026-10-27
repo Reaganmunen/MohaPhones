@@ -25,6 +25,7 @@
     L.push('*Receipt ' + (sale.sale_number || '') + '*');
     L.push(when);
     if (sale.customer_name) L.push('Customer: ' + sale.customer_name);
+    if (sale.customer_phone) L.push('Phone: ' + sale.customer_phone);
     L.push('------------------------');
     (sale.items || []).forEach((i) => {
       L.push(i.product_name);

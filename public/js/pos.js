@@ -166,12 +166,12 @@
   $('cres').addEventListener('click', (e) => {
     const b = e.target.closest('button'); if (!b) return;
     customer = $('cres').rows.find((c) => String(c.id) === b.dataset.id);
-    $('cres').hidden = true; $('cq').value = ''; $('cq').parentElement.hidden = true;
+    $('cres').hidden = true; $('cq').value = ''; $('cq').parentElement.hidden = true; $('walkin').hidden = true;
     $('cchip').hidden = false;
     $('cchip').innerHTML = `<i class="ph-duotone ph-user-circle"></i>${esc(customer.full_name)}<button type="button" aria-label="Remove customer"><i class="ph-bold ph-x"></i></button>`;
     search();
   });
-  $('cchip').addEventListener('click', (e) => { if (!e.target.closest('button')) return; customer = null; $('cchip').hidden = true; $('cq').parentElement.hidden = false; search(); });
+  $('cchip').addEventListener('click', (e) => { if (!e.target.closest('button')) return; customer = null; $('cchip').hidden = true; $('cq').parentElement.hidden = false; $('walkin').hidden = false; search(); });
 
   // ------------------------------------------------------------ payment
   const amtC = () => cents($('m-amt').value || 0);
@@ -206,6 +206,8 @@
     const due = total(), got = amtC(), err = $('m-err');
     const fail = (m) => { err.querySelector('span').textContent = m; err.hidden = false; };
     err.hidden = true;
+    const walk = customer ? { name: '', phone: '' } : { name: $('wn').value.trim(), phone: $('wp').value.replace(/[\s-]/g, '') };
+    if (walk.phone && !/^\+?[0-9]{9,15}$/.test(walk.phone)) return fail('Customer phone number is not valid. Use digits only, e.g. 0712345678.');
     if (got <= 0 && !customer) return fail('Enter the amount received.');
     if (got < due && !customer) return fail('Full payment is required unless the sale is for a saved customer.');
     if (method !== 'cash' && got > due) return fail('Non-cash payments cannot be more than the amount due.');
@@ -213,13 +215,14 @@
     try {
       const body = { items: [...cart.values()].map((l) => (unitC(l) !== cents(l.p.price) ? { product_id: l.p.id, quantity: l.qty, unit_price: unitC(l) / 100, imeis: l.imeis } : { product_id: l.p.id, quantity: l.qty, imeis: l.imeis })), payments: got > 0 ? [{ method, amount: got / 100, reference: $('m-ref').value.trim() || undefined }] : [] };
       if (customer) body.customer_id = customer.id;
+      else { if (walk.name) body.customer_name = walk.name; if (walk.phone) body.customer_phone = walk.phone; }
       const sale = await api('/sales', { method: 'POST', body });
       payModal.hide();
       lastSale = sale; lastShop = null;
       lastFile = null; setPdfBtn(false);
       api('/sales/' + sale.id + '/receipt').then((r) => { lastShop = r.shop; lastSale = r.sale; }).catch(() => {})   // shop name/address/footer for the receipt
         .then(() => { try { lastFile = HD.receiptPdf.file({ shop: lastShop || {}, sale: lastSale }); setPdfBtn(true); } catch (e) { setPdfBtn(false, true); } });
-      $('d-phone').value = customer && customer.phone ? customer.phone : '';
+      $('d-phone').value = customer && customer.phone ? customer.phone : walk.phone;
       $('d-num').textContent = sale.sale_number ? 'Receipt ' + sale.sale_number : '';
       $('d-total').textContent = KES(due);
       $('d-change').textContent = method === 'cash' && got > due ? 'Change: ' + KES(got - due) : (got < due ? 'On credit: ' + KES(due - got) : 'Paid in full');
@@ -231,7 +234,7 @@
   $('d-wa').addEventListener('click', sendWhatsApp);
   $('d-new').addEventListener('click', () => {
     lastSale = null; lastShop = null; lastFile = null; $('d-phone').value = '';
-    doneModal.hide(); cart.clear(); customer = null; $('cchip').hidden = true; $('cq').parentElement.hidden = false;
+    doneModal.hide(); cart.clear(); customer = null; $('cchip').hidden = true; $('cq').parentElement.hidden = false; $('walkin').hidden = false; $('wn').value = ''; $('wp').value = '';
     $('q').value = ''; draw(); search(); $('q').focus();
   });
 

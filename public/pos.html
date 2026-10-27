@@ -55,6 +55,16 @@
             <div id="cchip" class="cust-chip" hidden></div>
           </div>
 
+          <!-- walk-in customer: typed at the till, printed on the receipt (hidden once a saved customer is picked) -->
+          <div id="walkin" class="mt-2">
+            <div class="d-grid gap-2">
+              <div class="pos-search sm"><i class="ph-duotone ph-user"></i>
+                <input id="wn" class="form-control" type="text" maxlength="150" placeholder="Customer name (optional, printed on receipt)" autocomplete="off"></div>
+              <div class="pos-search sm"><i class="ph-duotone ph-phone"></i>
+                <input id="wp" class="form-control" type="tel" inputmode="tel" maxlength="20" placeholder="Customer phone (optional, printed on receipt)" autocomplete="off"></div>
+            </div>
+          </div>
+
           <div id="lines" class="lines"><div class="state-box"><i class="ph-duotone ph-shopping-cart"></i><div>Cart is empty</div></div></div>
 
           <div class="totals">

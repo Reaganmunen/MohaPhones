@@ -50,12 +50,19 @@ exports.create = wrap(async (req, res) => {
   }
   const points = v.optInt(b.loyalty_points_to_redeem, 'loyalty_points_to_redeem', { min: 0 }) || 0;
 
+  // Walk-in customer typed at the till: kept on the sale (only when no saved customer is chosen) and printed on the receipt.
+  const walkName = typeof b.customer_name === 'string' ? b.customer_name.trim() : '';
+  const walkPhone = typeof b.customer_phone === 'string' ? b.customer_phone.replace(/[\s-]/g, '') : '';
+  if (walkName.length > 150) throw v.bad('Customer name is too long (150 characters at most)');
+  if (walkPhone && !/^\+?[0-9]{9,15}$/.test(walkPhone)) throw v.bad('Customer phone number is not valid');
+
   // Attach to the cashier's open till session automatically.
   const register_session_id = v.optId(b.register_session_id, 'register_session_id')
     || ((await models.registers.getOpen(req.user.id)) || {}).id;
 
   const sale = await models.sales.createSale({
     customer_id: v.optId(b.customer_id, 'customer_id'),
+    customer_name: walkName || undefined, customer_phone: walkPhone || undefined,
     location_id: v.optId(b.location_id, 'location_id'),
     register_session_id,
     status: b.status === 'held' ? 'held' : 'completed',
