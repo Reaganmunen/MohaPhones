@@ -45,11 +45,8 @@ exports.receive = wrap(async (req, res) => {
     product_id: v.id(it.product_id, `items[${i}].product_id`),
     quantity: v.int(it.quantity, `items[${i}].quantity`, { min: 1 }),
     unit_cost: v.num(it.unit_cost, `items[${i}].unit_cost`, { min: 0 }),
-    batch_number: it.batch_number ? v.str(it.batch_number, `items[${i}].batch_number`, { max: 50 }) : undefined,
-    expiry_date: v.optDate(it.expiry_date, `items[${i}].expiry_date`),
-    manufactured_date: v.optDate(it.manufactured_date, `items[${i}].manufactured_date`),
     purchase_order_item_id: v.optId(it.purchase_order_item_id, `items[${i}].purchase_order_item_id`),
-    imeis: models.units.toList(it.imeis),
+    imeis: models.devices.toList(it.imeis),
   }));
   const purchase_order_id = v.optId(b.purchase_order_id, 'purchase_order_id');
   const supplier_id = v.optId(b.supplier_id, 'supplier_id');
@@ -90,12 +87,12 @@ exports.createSupplierReturn = wrap(async (req, res) => {
   v.required(b, ['supplier_id', 'reason']);
   const items = v.array(b.items, 'items').map((it, i) => ({
     product_id: v.id(it.product_id, `items[${i}].product_id`), quantity: v.int(it.quantity, `items[${i}].quantity`, { min: 1 }),
-    unit_cost: v.num(it.unit_cost, `items[${i}].unit_cost`, { min: 0 }), batch_id: v.optId(it.batch_id, `items[${i}].batch_id`), imeis: models.units.toList(it.imeis),
+    unit_cost: v.num(it.unit_cost, `items[${i}].unit_cost`, { min: 0 }), imeis: models.devices.toList(it.imeis),
   }));
   const location_id = v.optId(b.location_id, 'location_id') || (await models.defaultLocationId());
   const ret = await models.purchases.createSupplierReturn({
     supplier_id: v.id(b.supplier_id, 'supplier_id'), grn_id: v.optId(b.grn_id, 'grn_id'), location_id,
-    reason: v.oneOf(b.reason, 'reason', ['damaged', 'expired', 'wrong_item', 'overstock', 'other']),
+    reason: v.oneOf(b.reason, 'reason', ['damaged', 'wrong_item', 'overstock', 'other']),
     credit_amount: v.optNum(b.credit_amount, 'credit_amount', { min: 0 }) || 0, notes: b.notes, items, created_by: req.user.id,
   });
   await audit.record(req, 'supplier_return', 'supplier_return', ret.id, null, { reason: ret.reason, credit_amount: ret.credit_amount });

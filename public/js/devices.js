@@ -47,12 +47,13 @@
   $('d-next').addEventListener('click', () => { if (page < pages) { page++; load(); } });
 
   // ------------------------------------------------------------ add devices by IMEI
-  const count = () => $('a-imeis').value.split(/[\s,;]+/).filter(Boolean).length;
-  $('a-imeis').addEventListener('input', () => { $('a-n').textContent = '(' + count() + ')'; });
+  let entry = null;
+  const showOk = (m) => { const el = $('a-ok'); if (!el) return; el.querySelector('span').textContent = m || ''; el.hidden = !m; };
 
   async function openAdd() {
     modal = modal || new bootstrap.Modal($('devModal'));
-    $('a-err').hidden = true; $('a-imeis').value = ''; $('a-n').textContent = '(0)';
+    entry = entry || HD.imeiEntry.mount($('a-entry'));
+    $('a-err').hidden = true; showOk(''); entry.clear();
     try {
       const prods = (await api('/products?limit=200&active=true')).filter((p) => p.requires_imei);
       $('a-product').innerHTML = prods.length ? prods.map((p) => `<option value="${p.id}">${esc(p.name)} · ${esc(p.sku)}</option>`).join('')
@@ -63,17 +64,25 @@
     modal.show();
   }
   $('add-devices').addEventListener('click', openAdd);
+  $('devModal').addEventListener('shown.bs.modal', () => entry && entry.focus());
 
   $('a-save').addEventListener('click', async () => {
     if (busy) return;
-    const err = $('a-err'), fail = (m) => { err.querySelector('span').textContent = m; err.hidden = false; };
-    err.hidden = true;
-    if (!$('a-product').value) return fail('Choose a product.');
-    if (!count()) return fail('Enter at least one IMEI / serial number.');
+    const err = $('a-err'), fail = (m) => { err.querySelector('span').textContent = m; err.hidden = false; err.scrollIntoView({ block: 'nearest' }); };
+    err.hidden = true; showOk('');
+    if (!$('a-product').value) return fail('Choose the phone model first.');
+    const problem = entry.problem();
+    if (problem) return fail(problem);
+    const imeis = entry.getList();
     busy = true; const btn = $('a-save'); btn.disabled = true; btn.querySelector('.label').textContent = 'Saving…';
     try {
-      await api('/devices/intake', { method: 'POST', body: { product_id: Number($('a-product').value), imeis: $('a-imeis').value, location_id: $('a-loc').value ? Number($('a-loc').value) : undefined } });
-      modal.hide(); page = 1; load();
+      await entry.recheck();                                     // freshest answer on duplicates before we try
+      const again = entry.problem(); if (again) throw new Error(again);
+      const res = await api('/devices/intake', { method: 'POST', body: { product_id: Number($('a-product').value), imeis, location_id: $('a-loc').value ? Number($('a-loc').value) : undefined } });
+      const name = $('a-product').selectedOptions[0] ? $('a-product').selectedOptions[0].textContent.split(' · ')[0] : 'the product';
+      entry.clear(); entry.focus();
+      showOk(`Added ${res.registered} ${res.registered === 1 ? 'phone' : 'phones'} to ${name}. You can scan the next batch, or close this window.`);
+      page = 1; load();
     } catch (e) { fail(e.message); }
     finally { busy = false; btn.disabled = false; btn.querySelector('.label').textContent = 'Add to stock'; }
   });

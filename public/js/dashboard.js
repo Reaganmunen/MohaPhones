@@ -229,28 +229,12 @@
       (rows.length > 6 ? `<div class="text-center mt-2"><a class="see-all justify-content-center" style="margin:0" href="/stock.html">+ ${rows.length - 6} more</a></div>` : '');
   }
 
-  async function loadExpiring() {
-    const rows = await api('/stock/expiring');
-    const el = $('exp-body'), pill = $('exp-count');
-    pill.hidden = !rows.length; pill.textContent = rows.length;
-    if (!rows.length) { el.innerHTML = stateBox('ph-seal-check', 'No batches are close to expiry'); return; }
-    el.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th>Expires</th><th class="num">Units</th></tr></thead><tbody>' +
-      rows.slice(0, 6).map((r) => {
-        const left = Number(r.days_left);
-        const p = r.is_expired ? '<span class="pill gone">Expired</span>' : `<span class="pill ${left <= 14 ? 'gone' : 'soon'}">${left} ${left === 1 ? 'day' : 'days'}</span>`;
-        return `<tr><td><div class="cell-main"><span class="thumb"><i class="ph-duotone ph-hourglass-high"></i></span><div class="trunc"><b>${esc(r.name)}</b><small>Batch ${esc(r.batch_number)}</small></div></div></td>` +
-          `<td style="white-space:nowrap">${p}<div><small style="color:var(--hd-muted);font-weight:500">${fmt.dayLabel(fmt.dateKey(r.expiry_date), { day: 'numeric', month: 'short', year: 'numeric' })}</small></div></td>` +
-          `<td class="num">${num(r.on_hand)}</td></tr>`;
-      }).join('') + '</tbody></table></div>' +
-      (rows.length > 6 ? `<div class="text-center mt-2"><a class="see-all justify-content-center" style="margin:0" href="/stock.html">+ ${rows.length - 6} more</a></div>` : '');
-  }
-
   // ------------------------------------------------------------------ load everything
   let syncedAlerts = false;
   async function loadAll() {
     const icon = $('btn-refresh').querySelector('i');
     icon.classList.add('spin');
-    // Create any missing low-stock / expiry notifications once per visit, then refresh the bell.
+    // Create any missing low-stock notifications once per visit, then refresh the bell.
     const alerts = (!syncedAlerts && (can('stock.view') || can('reports.view')))
       ? api('/notifications/sync', { method: 'POST' }).catch(() => {}).then(() => { syncedAlerts = true; shell.refreshNotifications(); })
       : shell.refreshNotifications();
@@ -263,7 +247,6 @@
       widget($('sales-body'), 'sales.view', loadSales),
       widget($('top-body'), 'reports.view', loadTop),
       widget($('low-body'), 'stock.view', loadLow),
-      widget($('exp-body'), 'stock.view', loadExpiring),
     ]);
     icon.classList.remove('spin');
   }

@@ -38,7 +38,7 @@ exports.create = wrap(async (req, res) => {
   const items = v.array(b.items, 'items').map((it, i) => {
     const line = { product_id: v.id(it.product_id, `items[${i}].product_id`), quantity: v.int(it.quantity, `items[${i}].quantity`, { min: 1 }) };
     if (it.unit_price !== undefined && it.unit_price !== null) line.unit_price = v.num(it.unit_price, `items[${i}].unit_price`, { min: 0 });
-    const imeis = models.units.toList(it.imeis);
+    const imeis = models.devices.toList(it.imeis);
     if (imeis) line.imeis = imeis;
     if (it.discount_amount) line.discount_amount = v.num(it.discount_amount, `items[${i}].discount_amount`, { min: 0 });
     return line;
@@ -129,11 +129,11 @@ exports.createReturn = wrap(async (req, res) => {
     sale_item_id: v.id(it.sale_item_id, `items[${i}].sale_item_id`),
     quantity: v.int(it.quantity, `items[${i}].quantity`, { min: 1 }),
     restock: it.restock !== false,
-    imeis: models.units.normalise(models.units.toList(it.imeis) || []),
+    imeis: models.devices.normalise(models.devices.toList(it.imeis) || []),
   }));
   const ret = await models.sales.createReturn({
     sale_id: v.id(req.params.id), items, notes: b.notes, processed_by: req.user.id,
-    reason: v.oneOf(b.reason, 'reason', ['defective', 'wrong_item', 'changed_mind', 'expired', 'other']),
+    reason: v.oneOf(b.reason, 'reason', ['defective', 'wrong_item', 'changed_mind', 'other']),
     refund_method: v.oneOf(b.refund_method, 'refund_method', ['cash', 'mpesa', 'store_credit', 'none']),
     location_id: v.optId(b.location_id, 'location_id'),
   });

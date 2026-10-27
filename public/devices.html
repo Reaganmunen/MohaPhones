@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/pos.css">
   <link rel="stylesheet" href="/css/products.css">
   <link rel="stylesheet" href="/css/devices.css">
+  <link rel="stylesheet" href="/css/imei-entry.css">
 </head>
 <body data-page="devices">
 <div class="app">
@@ -64,20 +65,23 @@
 
 <!-- add devices modal -->
 <div class="modal fade" id="devModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered"><div class="modal-content pay-modal">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content pay-modal">
     <div class="modal-body p-4">
       <div class="d-flex justify-content-between align-items-start mb-3">
-        <h2 class="h5 fw-bold mb-0">Add devices to stock</h2>
+        <h2 class="h5 fw-bold mb-0">Add phones to stock</h2>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="hd-alert hd-alert-danger mb-3" id="a-err" hidden><i class="ph-duotone ph-warning-circle"></i><span></span></div>
-      <label class="hd-label" for="a-product">Product (IMEI-tracked)</label>
-      <select id="a-product" class="form-select mb-3"></select>
-      <label class="hd-label" for="a-loc">Location</label>
-      <select id="a-loc" class="form-select mb-3"><option value="">Default shop</option></select>
-      <label class="hd-label" for="a-imeis">IMEI / serial numbers <span class="text-muted fw-normal" id="a-n">(0)</span></label>
-      <textarea id="a-imeis" class="form-control mb-1" rows="6" placeholder="Scan or paste one per line (commas and spaces also work)"></textarea>
-      <div class="small text-muted mb-3">Stock goes up by the number of IMEIs. For a supplier delivery with costs, use Purchases &rarr; Receive goods instead.</div>
+      <div class="hd-alert hd-alert-success mb-3" id="a-ok" hidden><i class="ph-duotone ph-check-circle"></i><span></span></div>
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-sm-7"><label class="hd-label" for="a-product">Phone model</label>
+          <select id="a-product" class="form-select"></select></div>
+        <div class="col-12 col-sm-5"><label class="hd-label" for="a-loc">Location</label>
+          <select id="a-loc" class="form-select"><option value="">Default shop</option></select></div>
+      </div>
+      <label class="hd-label">IMEI numbers</label>
+      <div id="a-entry" class="mb-2"></div>
+      <div class="small text-muted mb-3">Stock goes up by the number of phones scanned. For a supplier delivery with costs, use Purchases &rarr; Receive goods.</div>
       <button class="btn btn-hd btn-lg w-100" id="a-save" type="button"><span class="label">Add to stock</span></button>
     </div>
   </div></div>
@@ -86,6 +90,7 @@
 <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/shell.js"></script>
+<script src="/js/imei-entry.js"></script>
 <script src="/js/devices.js"></script>
 </body>
 </html>

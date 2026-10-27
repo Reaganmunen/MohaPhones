@@ -6,7 +6,7 @@ module.exports = {
   audit: require('./audit.model'),
   notifications: require('./notification.model'),
   ...catalog,                       // categories, brands, units, taxRates, customerGroups, locations, expenseCategories
-  units: require('./unit.model'),
+  devices: require('./unit.model'),   // IMEI / serial register (NOT the units-of-measure lookup, which is catalog.units)
   products: require('./product.model'),
   suppliers: require('./supplier.model'),
   customers: require('./customer.model'),

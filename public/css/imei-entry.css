@@ -1,0 +1,41 @@
+/* IMEI entry widget (js/imei-entry.js) */
+.ie { --ie-ok: var(--hd-success, #1f9d61); --ie-bad: var(--hd-danger, #e5484d); --ie-warn: #b86e00; }
+.ie-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ie-count { font-weight: 700; color: var(--hd-muted); font-size: .86rem; }
+.ie-count b { font-size: 1.5rem; color: var(--hd-ink); font-weight: 800; margin-right: 2px; font-variant-numeric: tabular-nums; }
+.ie-clear { border: 0; background: none; color: var(--ie-bad); font-weight: 700; font-size: .78rem; padding: 4px 6px; border-radius: 8px; }
+.ie-clear:hover { background: var(--hd-danger-soft, #fdecec); }
+.ie-bar { height: 6px; border-radius: 99px; background: #ececE8; overflow: hidden; margin-bottom: 12px; }
+.ie-bar i { display: block; height: 100%; width: 0; background: var(--hd-ink); border-radius: 99px; transition: width .2s ease; }
+.ie-bar.full i { background: var(--ie-ok); }
+.ie-bar.over i { background: var(--ie-warn); }
+
+.ie-input { position: relative; display: flex; align-items: center; gap: 8px; }
+.ie-input > .ph-duotone { position: absolute; left: 14px; font-size: 1.35rem; color: var(--hd-muted); pointer-events: none; }
+.ie-input input { flex: 1; height: 54px; padding: 0 14px 0 46px; border-radius: 14px; border: 1.5px solid var(--hd-line); background: #fafaf8;
+  font-weight: 700; font-size: 1rem; letter-spacing: .02em; font-variant-numeric: tabular-nums; min-width: 0; }
+.ie-input input:focus { outline: 0; background: #fff; border-color: var(--hd-ink); box-shadow: 0 0 0 4px rgba(255, 138, 31, .45); }
+.ie-add { height: 54px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--hd-ink); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.ie-add:hover { background: var(--hd-ink-3); }
+.ie-msg { min-height: 22px; margin: 6px 2px 4px; font-size: .8rem; font-weight: 700; color: var(--hd-muted); }
+.ie-msg.ok { color: var(--ie-ok); } .ie-msg.warn { color: var(--ie-warn); } .ie-msg.bad { color: var(--ie-bad); }
+
+.ie-list { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow-y: auto; border-radius: 14px; }
+.ie.has-items .ie-list { border: 1.5px solid var(--hd-line); }
+.ie-row { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 12px; border-bottom: 1px solid var(--hd-line); background: #fff; }
+.ie-row:last-child { border-bottom: 0; }
+.ie-row .n { width: 28px; flex: none; color: var(--hd-muted); font-size: .72rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.ie-row code { flex: 1; font-family: inherit; font-weight: 800; font-size: .95rem; letter-spacing: .03em; color: var(--hd-ink); font-variant-numeric: tabular-nums; word-break: break-all; }
+.ie-row .tag { flex: none; font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; color: var(--ie-ok); }
+.ie-row.bad { background: var(--hd-danger-soft, #fdecec); }
+.ie-row.bad code { color: #8f1d21; }
+.ie-row.bad .tag { background: var(--ie-bad); color: #fff; }
+.ie-row.warn { background: #fff6e3; }
+.ie-row.warn .tag { background: #ffe3a8; color: #7a4a00; }
+.ie-row.info .tag { background: #dff3f7; color: #1d6b8a; }
+.ie-row .x { flex: none; border: 0; background: none; width: 32px; height: 32px; border-radius: 10px; color: var(--hd-muted); }
+.ie-row .x:hover { background: rgba(0, 0, 0, .06); color: var(--ie-bad); }
+.ie-row.flash { animation: ie-flash .9s ease; }
+@keyframes ie-flash { 0%, 60% { box-shadow: inset 0 0 0 3px var(--hd-lime, #ff8a1f); } 100% { box-shadow: inset 0 0 0 3px transparent; } }
+.ie-hint { margin-top: 8px; font-size: .76rem; color: var(--hd-muted); font-weight: 500; }
+@media (max-width: 575.98px) { .ie-add span { display: none; } .ie-add { padding: 0 16px; } }

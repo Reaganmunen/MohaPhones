@@ -16,5 +16,5 @@ exports.markAllRead = wrap(async (req, res) => {
   ok(res, { read: true });
 });
 
-/** Creates low-stock and expiry alerts that don't already have an unread notification. Call on a schedule or at shop opening. */
+/** Creates low-stock alerts that don't already have an unread notification. Call on a schedule or at shop opening. */
 exports.sync = wrap(async (req, res) => ok(res, await models.notifications.syncStockAlerts()));

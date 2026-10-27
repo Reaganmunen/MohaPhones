@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel ="stylesheet" href="css/pos.css">
   <link rel="stylesheet" href="css/purchases.css">
+  <link rel="stylesheet" href="css/imei-entry.css">
 </head>
 <body data-page="purchases">
 <div class="app">
@@ -75,7 +76,7 @@
         <div class="col-12"><label class="hd-label" for="d-notes">Notes</label><input id="d-notes" class="form-control" maxlength="300" placeholder="Optional"></div>
       </div>
       <div class="pos-search mb-2" id="d-search-w"><i class="ph-duotone ph-magnifying-glass"></i><input id="d-q" class="form-control" type="search" placeholder="Search a product to add…" autocomplete="off"><div id="d-res" class="cust-res" hidden></div></div>
-      <div class="tbl-wrap"><table class="tbl lines-tbl"><thead><tr><th>Product</th><th style="width:90px">Qty</th><th style="width:120px">Unit cost</th><th class="rcv" style="width:260px">IMEI / serial numbers (phones)</th><th class="num" style="width:120px">Total</th><th style="width:36px"></th></tr></thead><tbody id="d-lines"></tbody></table></div>
+      <div class="tbl-wrap"><table class="tbl lines-tbl"><thead><tr><th>Product</th><th style="width:90px">Qty</th><th style="width:120px">Unit cost</th><th class="rcv" style="width:150px">IMEIs (phones)</th><th class="num" style="width:120px">Total</th><th style="width:36px"></th></tr></thead><tbody id="d-lines"></tbody></table></div>
       <div class="totals"><div class="grand"><span>Total (excl. VAT)</span><b id="d-total">KES 0.00</b></div></div>
     </div>
     <div class="modal-footer border-0 px-4 pb-4 pt-0"><button class="btn btn-hd btn-lg w-100" id="d-save" type="button"><span class="label">Save order</span></button></div>
@@ -92,6 +93,7 @@
 <script src="vendor/bootstrap/bootstrap.bundle.min.js"></script>
 <script src="js/api.js"></script>
 <script src="js/shell.js"></script>
+<script src="js/imei-entry.js"></script>
 <script src="js/purchases.js"></script>
 </body>
 </html>

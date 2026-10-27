@@ -20,7 +20,7 @@ const markAllRead = (user_id, db) =>
   query('UPDATE notifications SET is_read = TRUE WHERE (user_id = $1 OR user_id IS NULL) AND NOT is_read', [user_id], db);
 
 /**
- * Create low-stock and expiry alerts, skipping any that already have an unread
+ * Create low-stock alerts, skipping any that already have an unread
  * notification. Safe to run on a schedule (e.g. every hour or at shop opening).
  */
 async function syncStockAlerts(db) {
@@ -30,15 +30,7 @@ async function syncStockAlerts(db) {
      FROM v_low_stock ls
      WHERE NOT EXISTS (SELECT 1 FROM notifications n WHERE n.type = 'low_stock' AND n.entity_type = 'product'
                        AND n.entity_id = ls.product_id AND NOT n.is_read)`, [], db);
-  const exp = await query(
-    `INSERT INTO notifications (type, title, message, entity_type, entity_id)
-     SELECT 'expiry',
-            CASE WHEN e.is_expired THEN 'Expired: ' ELSE 'Expiring soon: ' END || e.name,
-            'Batch ' || e.batch_number || ', ' || e.on_hand || ' units, expiry ' || e.expiry_date, 'batch', e.batch_id
-     FROM v_expiring_batches e
-     WHERE NOT EXISTS (SELECT 1 FROM notifications n WHERE n.type = 'expiry' AND n.entity_type = 'batch'
-                       AND n.entity_id = e.batch_id AND NOT n.is_read)`, [], db);
-  return { low_stock_created: low.rowCount, expiry_created: exp.rowCount };
+  return { low_stock_created: low.rowCount };
 }
 
 module.exports = { create, listForUser, markRead, markAllRead, syncStockAlerts };

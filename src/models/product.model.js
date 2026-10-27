@@ -5,7 +5,7 @@ const stock = require('./stock.model');
 const units = require('./unit.model');
 
 const FIELDS = ['sku', 'barcode', 'name', 'description', 'category_id', 'brand_id', 'unit_id', 'tax_rate_id',
-  'cost_price', 'selling_price', 'min_price', 'reorder_level', 'reorder_qty', 'tracks_expiry', 'requires_imei', 'warranty_months', 'image_url', 'is_active', 'created_by'];
+  'cost_price', 'selling_price', 'min_price', 'reorder_level', 'reorder_qty', 'requires_imei', 'warranty_months', 'image_url', 'is_active', 'created_by'];
 
 const STOCK_SUBQUERY = `(SELECT product_id, SUM(on_hand)::INT AS on_hand FROM stock_levels GROUP BY product_id)`;
 
@@ -23,7 +23,7 @@ async function list({ search, category_id, brand_id, active = true, low_stock, l
   params.push(limit, offset);
   const { rows } = await query(
     `SELECT p.id, p.sku, p.barcode, p.name, p.cost_price, p.selling_price, p.min_price, p.reorder_level,
-            p.category_id, p.brand_id, p.unit_id, p.tracks_expiry, p.requires_imei, p.warranty_months, p.is_active,
+            p.category_id, p.brand_id, p.unit_id, p.requires_imei, p.warranty_months, p.is_active,
             c.name AS category, b.name AS brand, u.abbreviation AS unit, COALESCE(sl.on_hand, 0) AS on_hand,
             COUNT(*) OVER()::INT AS total_count
        FROM products p
@@ -40,15 +40,14 @@ async function getById(id, db) {
        FROM products p LEFT JOIN categories c ON c.id = p.category_id LEFT JOIN brands b ON b.id = p.brand_id
        LEFT JOIN units u ON u.id = p.unit_id LEFT JOIN tax_rates t ON t.id = p.tax_rate_id WHERE p.id = $1`, [id], db);
   if (!p) throw notFound('Product');
-  const [levels, batches, suppliers, groupPrices] = await Promise.all([
+  const [levels, suppliers, groupPrices] = await Promise.all([
     stock.getLevels({ product_id: id }, db),
-    stock.listBatches({ product_id: id }, db),
     query(`SELECT ps.*, s.name AS supplier_name FROM product_suppliers ps JOIN suppliers s ON s.id = ps.supplier_id
             WHERE ps.product_id = $1 ORDER BY ps.is_preferred DESC, s.name`, [id], db).then((r) => r.rows),
     query(`SELECT g.customer_group_id, cg.name AS group_name, g.price FROM product_group_prices g
              JOIN customer_groups cg ON cg.id = g.customer_group_id WHERE g.product_id = $1`, [id], db).then((r) => r.rows),
   ]);
-  return { ...p, stock_by_location: levels, batches, suppliers, group_prices: groupPrices,
+  return { ...p, stock_by_location: levels, suppliers, group_prices: groupPrices,
     total_on_hand: levels.reduce((s, l) => s + l.on_hand, 0) };
 }
 
@@ -60,7 +59,7 @@ async function posSearch(term, { location_id, customer_group_id, limit = 20 } = 
   const t = String(term || '').trim();
   if (!t) return [];
   const { rows } = await query(
-    `SELECT p.id, p.sku, p.barcode, p.name, p.tracks_expiry, p.min_price, p.requires_imei, p.warranty_months, mu.imei AS matched_imei,
+    `SELECT p.id, p.sku, p.barcode, p.name, p.min_price, p.requires_imei, p.warranty_months, mu.imei AS matched_imei,
             COALESCE(pgp.price, ROUND(p.selling_price * (1 - COALESCE(cg.discount_percent, 0) / 100), 2), p.selling_price) AS price,
             COALESCE(sl.on_hand, 0) AS on_hand
        FROM products p
@@ -89,7 +88,7 @@ async function resolvePrices(db, productIds, customerGroupId) {
 
 /**
  * Create a product. If tax_rate_id is omitted the default tax rate is used.
- * Optional opening stock (non-expiry products only; expiry products get stock via a goods-received note).
+ * Optional opening stock (phones need their IMEIs listed, one per unit).
  */
 async function create(data, { opening_stock = 0, location_id, user_id, imeis } = {}, db) {
   return inTx(db, async (c) => {
@@ -102,7 +101,6 @@ async function create(data, { opening_stock = 0, location_id, user_id, imeis } =
     const { rows: [p] } = await query(q.text, q.values, c);
 
     if (opening_stock > 0) {
-      if (p.tracks_expiry) throw new AppError('Receive expiry-tracked stock through a goods-received note (needs batch and expiry)', 422, 'BATCH_REQUIRED');
       if (!location_id) throw new AppError('location_id is required for opening stock', 400);
       if (p.requires_imei) {
         const list = units.normalise(imeis || []);

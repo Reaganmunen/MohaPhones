@@ -59,10 +59,6 @@
           <div class="card-hd stat amber" id="stat-low"><div class="top"><span class="s-ico"><i class="ph-duotone ph-package"></i></span><span class="s-label">Low stock</span></div>
             <div class="s-value sk" data-v>00</div><div class="s-foot sk" data-f>At or below reorder level</div></div>
         </div>
-        <div class="col-12 col-sm-6 col-xl-3">
-          <div class="card-hd stat sky" id="stat-exp" hidden><div class="top"><span class="s-ico"><i class="ph-duotone ph-hourglass-high"></i></span><span class="s-label">Expiring batches</span></div>
-            <div class="s-value sk" data-v>00</div><div class="s-foot sk" data-f>Expired or close to expiry</div></div>
-        </div>
 
         <div class="col-12">
           <div class="card-hd">
@@ -71,7 +67,6 @@
                 <button type="button" data-tab="levels" class="on">Levels</button>
                 <button type="button" data-tab="movements">Movements</button>
                 <button type="button" data-tab="low">Low stock</button>
-                <button type="button" data-tab="expiring" hidden>Expiring</button>
                 <button type="button" data-tab="takes" data-perm="stock.count">Counts</button>
               </div>
               <div class="tools" id="tools"></div>
@@ -95,7 +90,7 @@
             <div class="col-md-4"><label class="hd-label" for="m-loc" id="m-loc-label">Location</label><select class="form-select" id="m-loc"></select></div>
             <div class="col-md-4" id="m-to-wrap"><label class="hd-label" for="m-to">To location</label><select class="form-select" id="m-to"></select></div>
             <div class="col-md-4" id="m-reason-wrap"><label class="hd-label" for="m-reason">Reason</label>
-              <select class="form-select" id="m-reason"><option value="damaged">Damaged</option><option value="expired">Expired</option><option value="lost">Lost</option><option value="found">Found</option><option value="correction" selected>Correction</option><option value="sample">Sample</option><option value="other">Other</option></select></div>
+              <select class="form-select" id="m-reason"><option value="damaged">Damaged</option><option value="lost">Lost</option><option value="found">Found</option><option value="correction" selected>Correction</option><option value="sample">Sample</option><option value="other">Other</option></select></div>
             <div class="col-md-8"><label class="hd-label" for="m-notes">Notes</label><input class="form-control" id="m-notes" maxlength="300" placeholder="Optional"></div>
           </div>
           <label class="hd-label" for="m-search">Add products</label>

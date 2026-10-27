@@ -34,7 +34,7 @@ async function getPO(id, db) {
     `SELECT po.*, s.name AS supplier_name FROM purchase_orders po JOIN suppliers s ON s.id = po.supplier_id WHERE po.id = $1`, [id], db);
   if (!po) throw notFound('Purchase order');
   const { rows: items } = await query(
-    `SELECT i.*, p.name AS product_name, p.sku FROM purchase_order_items i JOIN products p ON p.id = i.product_id
+    `SELECT i.*, p.name AS product_name, p.sku, p.requires_imei FROM purchase_order_items i JOIN products p ON p.id = i.product_id
       WHERE i.purchase_order_id = $1 ORDER BY i.id`, [id], db);
   return { ...po, items };
 }
@@ -63,11 +63,11 @@ async function setPOStatus(id, status, approved_by, db) {
 
 // ---------------------------------------------------------------- receiving goods
 /**
- * The event that actually adds stock. For every line: creates/uses the batch (expiry products),
+ * The event that actually adds stock. For every line: registers the IMEIs (phones),
  * writes a 'purchase' ledger movement, updates the product's weighted-average cost, and rolls
  * quantity_received forward on the linked purchase order.
  *
- * items: [{ product_id, quantity, unit_cost, batch_number?, expiry_date?, purchase_order_item_id? }]
+ * items: [{ product_id, quantity, unit_cost, imeis?, purchase_order_item_id? }]
  */
 async function receiveGoods({ purchase_order_id, supplier_id, location_id, supplier_invoice_no, received_date, notes, items, received_by }, db) {
   if (!items || !items.length) throw new AppError('Add at least one item to receive', 400);
@@ -92,23 +92,13 @@ async function receiveGoods({ purchase_order_id, supplier_id, location_id, suppl
     let totalCost = 0;
     for (const it of items) {
       if (!(it.quantity > 0)) throw new AppError('Received quantity must be positive', 400);
-      const { rows: [p] } = await query('SELECT id, name, tracks_expiry, cost_price, requires_imei FROM products WHERE id = $1', [it.product_id], c);
+      const { rows: [p] } = await query('SELECT id, name, cost_price, requires_imei FROM products WHERE id = $1', [it.product_id], c);
       if (!p) throw notFound('Product');
 
       let imeiList = [];
       if (p.requires_imei) {
         imeiList = units.normalise(it.imeis || []);
         units.expectCount(imeiList, it.quantity, p.name);
-      }
-
-      let batchId = null;
-      if (p.tracks_expiry) {
-        if (!it.batch_number || !it.expiry_date) {
-          throw new AppError(`"${p.name}" tracks expiry: batch number and expiry date are required`, 422, 'BATCH_REQUIRED');
-        }
-        const b = await stock.findOrCreateBatch(c, { product_id: p.id, batch_number: it.batch_number, expiry_date: it.expiry_date,
-          manufactured_date: it.manufactured_date, unit_cost: it.unit_cost, supplier_id: supplierId });
-        batchId = b.id;
       }
 
       // Weighted-average cost: computed BEFORE the new units enter stock.
@@ -126,9 +116,9 @@ async function receiveGoods({ purchase_order_id, supplier_id, location_id, suppl
       }
 
       await query(
-        `INSERT INTO grn_items (grn_id, purchase_order_item_id, product_id, batch_id, quantity, unit_cost) VALUES ($1,$2,$3,$4,$5,$6)`,
-        [grn.id, poItemId, p.id, batchId, it.quantity, it.unit_cost], c);
-      await stock.applyMovement(c, { product_id: p.id, batch_id: batchId, location_id, quantity: it.quantity, movement_type: 'purchase',
+        `INSERT INTO grn_items (grn_id, purchase_order_item_id, product_id, quantity, unit_cost) VALUES ($1,$2,$3,$4,$5)`,
+        [grn.id, poItemId, p.id, it.quantity, it.unit_cost], c);
+      await stock.applyMovement(c, { product_id: p.id, location_id, quantity: it.quantity, movement_type: 'purchase',
         unit_cost: it.unit_cost, source_type: 'grn', source_id: grn.id, created_by: received_by });
       if (p.requires_imei) {
         await units.registerUnits(c, { product_id: p.id, location_id, imeis: imeiList, unit_cost: it.unit_cost, supplier_id: supplierId, grn_id: grn.id, user_id: received_by });
@@ -161,9 +151,10 @@ async function getGRN(id, db) {
        JOIN suppliers s ON s.id = g.supplier_id JOIN locations l ON l.id = g.location_id WHERE g.id = $1`, [id], db);
   if (!grn) throw notFound('Goods received note');
   const { rows: items } = await query(
-    `SELECT i.*, p.name AS product_name, b.batch_number, b.expiry_date FROM grn_items i
-       JOIN products p ON p.id = i.product_id LEFT JOIN batches b ON b.id = i.batch_id WHERE i.grn_id = $1 ORDER BY i.id`, [id], db);
-  return { ...grn, items };
+    `SELECT i.*, p.name AS product_name FROM grn_items i
+       JOIN products p ON p.id = i.product_id WHERE i.grn_id = $1 ORDER BY i.id`, [id], db);
+  const { rows: devs } = await query('SELECT product_id, imei FROM product_units WHERE grn_id = $1 ORDER BY id', [id], db);
+  return { ...grn, items: items.map((i) => ({ ...i, imeis: devs.filter((d) => d.product_id === i.product_id).map((d) => d.imei) })) };
 }
 
 const listGRNs = async ({ supplier_id, limit = 50, offset = 0 } = {}, db) => (await query(
@@ -182,7 +173,7 @@ async function recordSupplierPayment({ supplier_id, purchase_order_id, grn_id, a
 const listSupplierPayments = async (supplier_id, db) => (await query(
   'SELECT * FROM supplier_payments WHERE supplier_id = $1 ORDER BY paid_at DESC', [supplier_id], db)).rows;
 
-/** Send goods back to a supplier: stock goes down (FEFO for expiry products unless a batch is given). */
+/** Send goods back to a supplier: stock goes down. */
 async function createSupplierReturn({ supplier_id, grn_id, location_id, reason, credit_amount = 0, notes, items, created_by }, db) {
   if (!items || !items.length) throw new AppError('Add at least one item', 400);
   return inTx(db, async (c) => {
@@ -197,7 +188,7 @@ async function createSupplierReturn({ supplier_id, grn_id, location_id, reason, 
         units.expectCount(list, it.quantity, rp.name);
         await units.removeUnits(c, { product_id: it.product_id, location_id, imeis: list, status: 'supplier_return' });
       }
-      const slices = await stock.expandToBatches(c, { product_id: it.product_id, location_id, quantity: -it.quantity, batch_id: it.batch_id });
+      const slices = await stock.expandToBatches(c, { product_id: it.product_id, location_id, quantity: -it.quantity });
       for (const s of slices) {
         await query(`INSERT INTO supplier_return_items (supplier_return_id, product_id, batch_id, quantity, unit_cost) VALUES ($1,$2,$3,$4,$5)`,
           [ret.id, it.product_id, s.batch_id, -s.quantity, it.unit_cost], c);

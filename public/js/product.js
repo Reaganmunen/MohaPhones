@@ -63,7 +63,7 @@
         `<td>${esc(p.category || '–')}</td><td>${esc(p.brand || '–')}</td>` +
         (canManage ? `<td class="num">${money2(p.cost_price)}</td>` : '') +
         `<td class="num">${money2(p.selling_price)}</td><td style="white-space:nowrap">${stockCell(p)}</td>` +
-        `<td>${p.is_active ? '<span class="pill ok">Active</span>' : '<span class="pill off">Inactive</span>'}${p.tracks_expiry ? ' <span class="pill soon" title="Tracks batches and expiry"><i class="ph-bold ph-hourglass-high"></i></span>' : ''}</td>` +
+        `<td>${p.is_active ? '<span class="pill ok">Active</span>' : '<span class="pill off">Inactive</span>'}</td>` +
         (canManage ? `<td><div class="act"><button class="mini-btn" data-act="edit" title="Edit" aria-label="Edit ${esc(p.name)}"><i class="ph-duotone ph-pencil-simple"></i></button>` +
           `<button class="mini-btn" data-act="toggle" title="${p.is_active ? 'Deactivate' : 'Activate'}" aria-label="${p.is_active ? 'Deactivate' : 'Activate'} ${esc(p.name)}"><i class="ph-duotone ${p.is_active ? 'ph-eye-slash' : 'ph-eye'}"></i></button></div></td>` : '') +
         '</tr>').join('') + '</tbody></table></div>';
@@ -124,11 +124,9 @@
         dt('Unit', esc(p.unit || '–')) + dt('Tax', p.tax_name ? `${esc(p.tax_name)} (${num(p.tax_rate)}%)` : '–') +
         (canManage ? dt('Cost price', money2(p.cost_price)) : '') + dt('Selling price', money2(p.selling_price)) +
         dt('Minimum price', p.min_price == null ? '–' : money2(p.min_price)) + dt('Reorder at', `${num(p.reorder_level)} (order ${num(p.reorder_qty)})`) +
-        dt('Total on hand', num(p.total_on_hand)) + dt('Batch tracking', p.tracks_expiry ? 'Yes' : 'No') + '</dl>' +
+        dt('Total on hand', num(p.total_on_hand)) + '</dl>' +
         (p.description ? `<p class="small">${esc(p.description)}</p>` : '') +
         '<div class="dh">Stock by location</div>' + miniTable(['Location', 'On hand'], p.stock_by_location.map((l) => `<tr><td>${esc(l.location)}</td><td class="num">${num(l.on_hand)}</td></tr>`)) +
-        (p.tracks_expiry ? '<div class="dh">Batches</div>' + miniTable(['Batch', 'Expiry', 'On hand'], p.batches.map((b) =>
-          `<tr><td>${esc(b.batch_number)}</td><td class="num">${b.expiry_date ? fmt.dayLabel(fmt.dateKey(b.expiry_date), { day: 'numeric', month: 'short', year: 'numeric' }) : '–'}${b.is_expired ? ' <span class="pill gone">Expired</span>' : ''}</td><td class="num">${num(b.on_hand)}</td></tr>`)) : '') +
         '<div class="dh">Group prices</div>' + miniTable(['Group', 'Price'], p.group_prices.map((g) => `<tr><td>${esc(g.group_name)}</td><td class="num">${money2(g.price)}</td></tr>`)) +
         (canManage ? '<div class="dh">Suppliers</div>' + miniTable(['Supplier', 'Last cost'], p.suppliers.map((s) =>
           `<tr><td>${esc(s.supplier_name)}${s.is_preferred ? ' <span class="pill ok">Preferred</span>' : ''}</td><td class="num">${s.last_cost == null ? '–' : money2(s.last_cost)}</td></tr>`)) : '') +
@@ -156,7 +154,6 @@
       try {
         const p = await api('/products/' + id);
         Object.entries(F).forEach(([k, el]) => { $(el).value = p[k] == null ? '' : p[k]; });
-        $('p-expiry').checked = p.tracks_expiry;
       } catch (err) { alert(err.message); return; }
     }
     pModal.show();
@@ -172,7 +169,7 @@
       name: v('name').trim(), sku: v('sku').trim(), barcode: orNull(v('barcode')), description: orNull(v('description')),
       category_id: orNull(v('category_id')), brand_id: orNull(v('brand_id')), unit_id: v('unit_id'), tax_rate_id: orNull(v('tax_rate_id')),
       cost_price: orNull(v('cost_price')) ?? 0, selling_price: orNull(v('selling_price')) ?? 0, min_price: orNull(v('min_price')),
-      reorder_level: orNull(v('reorder_level')) ?? 0, reorder_qty: orNull(v('reorder_qty')) ?? 0, tracks_expiry: $('p-expiry').checked,
+      reorder_level: orNull(v('reorder_level')) ?? 0, reorder_qty: orNull(v('reorder_qty')) ?? 0,
     };
     if (!editingId) body.opening_stock = Number($('p-open').value) || 0;
     const btn = $('p-save'); btn.disabled = true;

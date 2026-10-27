@@ -99,6 +99,7 @@ router.delete('/products/:id/suppliers/:supplierId', can('products.manage'), pro
 // devices (IMEI / serial register, POS check, intake). Not '/units': that path is the units-of-measure lookup.
 router.get('/devices/check', can('sales.create', 'stock.view', 'products.view'), units.check);
 router.get('/devices', can('stock.view', 'products.view', 'sales.view', 'sales.create'), units.list);
+router.post('/devices/validate', can('stock.adjust', 'stock.view'), units.validate);
 router.post('/devices/intake', can('stock.adjust'), units.intake);
 
 // suppliers (+ what we owe them)
@@ -133,9 +134,7 @@ router.post('/customers/:id/loyalty', can('sales.discount'), customers.loyaltyAd
 // stock
 router.get('/stock/levels', can('stock.view'), stock.levels);
 router.get('/stock/movements', can('stock.view'), stock.movements);
-router.get('/stock/batches', can('stock.view'), stock.batches);
 router.get('/stock/low', can('stock.view'), stock.lowStock);
-router.get('/stock/expiring', can('stock.view'), stock.expiring);
 router.get('/stock/valuation', can('reports.view'), stock.valuation);
 router.get('/stock/integrity', can('reports.view'), stock.integrity);
 router.post('/stock/adjustments', can('stock.adjust'), stock.adjust);

@@ -78,10 +78,10 @@
       const meta = isPO
         ? [['Supplier', d.supplier_name], ['Ordered', day(d.order_date)], ['Expected', day(d.expected_date)], ['Total incl. VAT', money2(d.total)]]
         : [['Supplier', d.supplier_name], ['Received', day(d.received_date)], ['Invoice', d.supplier_invoice_no || '–'], ['Location', d.location]];
-      const head = isPO ? '<th class="num">Ordered</th><th class="num">Received</th><th class="num">Unit cost</th><th class="num">Total</th>' : '<th>Batch</th><th class="num">Qty</th><th class="num">Unit cost</th><th class="num">Total</th>';
+      const head = isPO ? '<th class="num">Ordered</th><th class="num">Received</th><th class="num">Unit cost</th><th class="num">Total</th>' : '<th class="num">Qty</th><th class="num">Unit cost</th><th class="num">Total</th>';
       const rows = d.items.map((i) => isPO
         ? `<tr><td><b>${esc(i.product_name)}</b><br><small class="text-muted">${esc(i.sku || '')}</small></td><td class="num">${num(i.quantity_ordered)}</td><td class="num">${num(i.quantity_received)}</td><td class="num">${money2(i.unit_cost)}</td><td class="num">${money2(i.line_total)}</td></tr>`
-        : `<tr><td><b>${esc(i.product_name)}</b></td><td>${i.batch_number ? esc(i.batch_number) + '<br><small class="text-muted">exp ' + day(i.expiry_date) + '</small>' : '–'}</td><td class="num">${num(i.quantity)}</td><td class="num">${money2(i.unit_cost)}</td><td class="num">${money2(cents(i.unit_cost) * i.quantity / 100)}</td></tr>`).join('');
+        : `<tr><td><b>${esc(i.product_name)}</b>${i.imeis && i.imeis.length ? `<br><small class="text-muted" style="word-break:break-all">${i.imeis.map(esc).join(' · ')}</small>` : ''}</td><td class="num">${num(i.quantity)}</td><td class="num">${money2(i.unit_cost)}</td><td class="num">${money2(cents(i.unit_cost) * i.quantity / 100)}</td></tr>`).join('');
       const st = d.status;
       let acts = '';
       if (isPO && can('purchases.manage') && st === 'draft') acts += '<button class="btn btn-hd" data-a="ordered"><i class="ph-duotone ph-paper-plane-tilt"></i> Mark as ordered</button>';
@@ -123,29 +123,48 @@
     $('d-save').querySelector('.label').textContent = recv ? 'Receive into stock' : 'Save order';
     if (po) po.items.forEach((i) => {
       const left = i.quantity_ordered - i.quantity_received;
-      if (left > 0) D.lines.push({ product_id: i.product_id, name: i.product_name, sku: i.sku, qty: left, cost: i.unit_cost, tax_rate: i.tax_rate, poi: i.id, imeis: '' });
+      if (left > 0) D.lines.push({ product_id: i.product_id, name: i.product_name, sku: i.sku, qty: left, cost: i.unit_cost, tax_rate: i.tax_rate, poi: i.id, imeiList: [], tracked: Boolean(i.requires_imei), open: true });
     });
     drawLines(); docModal.show();
   }
   $('btn-new').addEventListener('click', () => openDoc('po'));
   $('btn-receive').addEventListener('click', () => openDoc('receive'));
 
+  const imeiLabel = (l) => (l.tracked ? `${l.imeiList.length} of ${l.qty} IMEIs` : '–');
   function drawLines() {
     const recv = D.mode === 'receive';
     $('d-lines').innerHTML = D.lines.length ? D.lines.map((l, i) =>
-      `<tr data-i="${i}"><td class="pname"><b>${esc(l.name)}</b><small>${esc(l.sku || '')}</small></td>` +
+      `<tr data-i="${i}"><td class="pname"><b>${esc(l.name)}</b><small>${esc(l.sku || '')}${recv && l.tracked ? ' · IMEI tracked' : ''}</small></td>` +
       `<td><input class="form-control" data-f="qty" type="number" min="1" step="1" value="${l.qty}"></td>` +
       `<td><input class="form-control" data-f="cost" type="number" min="0" step="0.01" value="${l.cost}"></td>` +
-      (recv ? `<td class="rcv"><textarea class="form-control" data-f="imeis" rows="1" placeholder="${l.tracked ? 'Scan one IMEI per unit' : 'Only for IMEI-tracked phones'}">${esc(l.imeis)}</textarea></td>` : '<td class="rcv"></td>') +
-      `<td class="num" data-t>${money2(cents(l.cost) * l.qty / 100)}</td><td><button class="rm" type="button" data-rm aria-label="Remove"><i class="ph-duotone ph-x-circle"></i></button></td></tr>`).join('')
+      (recv ? `<td class="rcv">${l.tracked ? `<button type="button" class="ie-toggle ${l.imeiList.length === l.qty ? 'done' : ''}" data-ie-toggle data-i="${i}"><i class="ph-duotone ph-barcode"></i><span data-ie-label>${imeiLabel(l)}</span><i class="ph-bold ph-caret-${l.open ? 'up' : 'down'}"></i></button>` : '<span class="text-muted">–</span>'}</td>` : '<td class="rcv"></td>') +
+      `<td class="num" data-t>${money2(cents(l.cost) * l.qty / 100)}</td><td><button class="rm" type="button" data-rm aria-label="Remove"><i class="ph-duotone ph-x-circle"></i></button></td></tr>` +
+      (recv && l.tracked ? `<tr class="ie-line" data-ie-row="${i}"${l.open ? '' : ' hidden'}><td colspan="6"><div class="ie-box" data-ie-mount="${i}"></div></td></tr>` : '')).join('')
       : `<tr><td colspan="6">${box('ph-shopping-cart', D.po ? 'Everything on this order has been received' : 'Search for a product to add it')}</td></tr>`;
+    // one IMEI entry per phone line; its scanned list lives on the line so redrawing the table never loses it
+    if (recv) D.lines.forEach((l, i) => {
+      const mount = $('d-lines').querySelector(`[data-ie-mount="${i}"]`); if (!mount) return;
+      const saved = l.imeiList.slice();
+      l.entry = HD.imeiEntry.mount(mount, { expected: l.qty, onChange: (st) => { l.imeiList = st.list; syncIeLabel(i, st); } });
+      l.entry.setList(saved);
+    });
     total();
+  }
+  function syncIeLabel(i, st) {
+    const l = D.lines[i], btn = $('d-lines').querySelector(`[data-ie-toggle][data-i="${i}"]`); if (!l || !btn) return;
+    btn.querySelector('[data-ie-label]').textContent = imeiLabel(l);
+    btn.classList.toggle('done', l.imeiList.length === l.qty && !(st && st.bad));
   }
   const total = () => { $('d-total').textContent = money2(D.lines.reduce((s, l) => s + cents(l.cost) * l.qty, 0) / 100); };
   $('d-lines').addEventListener('input', (e) => {
     const tr = e.target.closest('tr[data-i]'), f = e.target.dataset.f; if (!tr || !f) return;
     const l = D.lines[tr.dataset.i]; l[f] = f === 'qty' ? Math.floor(Number(e.target.value)) || 0 : e.target.value;
     tr.querySelector('[data-t]').textContent = money2(cents(l.cost) * l.qty / 100); total();
+    if (f === 'qty' && l.entry) { l.entry.setExpected(l.qty); syncIeLabel(Number(tr.dataset.i), l.entry.status()); }
+  });
+  $('d-lines').addEventListener('click', (e) => {
+    const t = e.target.closest('[data-ie-toggle]');
+    if (t) { const i = Number(t.dataset.i); D.lines[i].open = !D.lines[i].open; drawLines(); return; }
   });
   $('d-lines').addEventListener('click', (e) => { const b = e.target.closest('[data-rm]'); if (!b) return; D.lines.splice(Number(b.closest('tr').dataset.i), 1); drawLines(); });
 
@@ -165,7 +184,7 @@
     const b = e.target.closest('button'); if (!b) return;
     const p = $('d-res').rows.find((r) => String(r.id) === b.dataset.id);
     const ex = D.lines.find((l) => l.product_id === p.id);
-    if (ex) ex.qty++; else D.lines.push({ product_id: p.id, name: p.name, sku: p.sku, qty: 1, cost: p.cost_price, tax_rate: 0, poi: null, imeis: '', tracked: Boolean(p.requires_imei) });
+    if (ex) ex.qty++; else D.lines.push({ product_id: p.id, name: p.name, sku: p.sku, qty: 1, cost: p.cost_price, tax_rate: 0, poi: null, imeiList: [], tracked: Boolean(p.requires_imei), open: true });
     $('d-res').hidden = true; $('d-q').value = ''; drawLines();
   });
 
@@ -178,9 +197,16 @@
     const lines = D.lines.filter((l) => l.qty > 0);
     if (!lines.length) return fail('Add at least one product with a quantity.');
     if (lines.some((l) => !(Number(l.cost) >= 0) || l.cost === '')) return fail('Every line needs a unit cost.');
+    if (recv) {
+      for (const l of lines) {
+        if (!l.tracked || !l.entry) continue;
+        const p = l.entry.problem();
+        if (p) { l.open = true; drawLines(); return fail(`${l.name}: ${p}`); }
+      }
+    }
     const body = recv
       ? { supplier_id, purchase_order_id: D.po ? D.po.id : undefined, supplier_invoice_no: $('d-inv').value.trim() || undefined, received_date: $('d-date').value || undefined, notes: $('d-notes').value.trim() || undefined,
-          items: lines.map((l) => ({ product_id: l.product_id, quantity: l.qty, unit_cost: Number(l.cost), imeis: l.imeis.trim() || undefined, purchase_order_item_id: l.poi || undefined })) }
+          items: lines.map((l) => ({ product_id: l.product_id, quantity: l.qty, unit_cost: Number(l.cost), imeis: l.tracked ? l.imeiList : undefined, purchase_order_item_id: l.poi || undefined })) }
       : { supplier_id, expected_date: $('d-date').value || undefined, notes: $('d-notes').value.trim() || undefined, status: 'draft',
           items: lines.map((l) => ({ product_id: l.product_id, quantity: l.qty, unit_cost: Number(l.cost), tax_rate: Number(l.tax_rate) || 0 })) };
     btn.disabled = true; btn.querySelector('.label').textContent = 'Saving…';

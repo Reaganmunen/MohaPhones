@@ -21,7 +21,7 @@
   }
 
   const SHOP_FIELDS = ['shop_name', 'currency', 'phone', 'email', 'kra_pin', 'address', 'receipt_footer'];
-  const OPS_FIELDS = ['loyalty_points_per_kes', 'loyalty_kes_per_point', 'frequent_customer_min_visits', 'expiry_alert_days'];
+  const OPS_FIELDS = ['loyalty_points_per_kes', 'loyalty_kes_per_point', 'frequent_customer_min_visits'];
 
   function fillForm(settings) {
     [...SHOP_FIELDS, ...OPS_FIELDS].forEach((k) => {

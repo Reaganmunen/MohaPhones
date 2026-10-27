@@ -7,7 +7,7 @@
   const can = shell.can;
   const LIMIT = 20;
 
-  const state = { tab: 'levels', locations: [], levels: [], low: [], expiring: [], q: '',
+  const state = { tab: 'levels', locations: [], levels: [], low: [], q: '',
     mov: { page: 1, location: '', type: '', from: '', to: '' }, take: null, m: { mode: 'adjust', lines: [] } };
   const mModal = new bootstrap.Modal($('mModal'));
   const nModal = new bootstrap.Modal($('nModal'));
@@ -38,12 +38,10 @@
   async function loadBase() {
     $('btn-refresh').querySelector('i').classList.add('spin');
     try {
-      const [levels, low, expiring] = await Promise.all([api('/stock/levels'), api('/stock/low'), api('/stock/expiring')]);
-      Object.assign(state, { levels, low, expiring });
+      const [levels, low] = await Promise.all([api('/stock/levels'), api('/stock/low')]);
+      Object.assign(state, { levels, low });
       setStat('stat-units', num(levels.reduce((s, r) => s + Number(r.on_hand), 0)), `${num(new Set(levels.map((r) => r.product_id)).size)} products stocked`);
       setStat('stat-low', num(low.length), low.length ? 'At or below reorder level' : 'Everything is above reorder level');
-      const gone = expiring.filter((r) => r.is_expired).length;
-      setStat('stat-exp', num(expiring.length), expiring.length ? `${num(gone)} already expired` : 'No batches close to expiry');
     } catch (err) { fail($('panel'), err, loadBase); }
     if (can('reports.view')) {
       api('/stock/valuation').then((rows) => setStat('stat-value', `<small>KES</small>${num(rows.reduce((s, r) => s + Number(r.value), 0))}`,
@@ -72,7 +70,7 @@
 
   function showTab() {
     tools(); $('pager').hidden = true;
-    ({ levels: renderLevels, movements: loadMovements, low: renderLow, expiring: renderExpiring, takes: loadTakes })[state.tab]();
+    ({ levels: renderLevels, movements: loadMovements, low: renderLow, takes: loadTakes })[state.tab]();
   }
 
   $('tabs').addEventListener('click', (e) => {
@@ -108,7 +106,7 @@
         `<td class="num"><b>${num(p.total)}</b></td><td>${lowIds.has(p.id) ? '<span class="pill soon">Low</span>' : ''}</td></tr>`).join('') + '</tbody></table></div>';
   }
 
-  // ------------------------------------------------------------------ low stock / expiring
+  // ------------------------------------------------------------------ low stock
   function renderLow() {
     if (!state.low.length) { $('panel').innerHTML = stateBox('ph-seal-check', 'All products are above their reorder level'); return; }
     $('panel').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th>On hand</th><th class="num">Reorder level</th><th class="num">Suggested order</th></tr></thead><tbody>' +
@@ -117,17 +115,6 @@
         return `<tr><td><div class="cell-main"><span class="thumb"><i class="ph-duotone ph-package"></i></span><div class="trunc"><b>${esc(r.name)}</b><small>${esc(r.sku)}</small></div></div></td>` +
           `<td style="white-space:nowrap"><span class="meter"><i class="${ratio > .5 ? 'mid' : ''}" style="width:${Math.max(ratio * 100, 6)}%"></i></span>${num(r.on_hand)}</td>` +
           `<td class="num">${num(r.reorder_level)}</td><td class="num">${r.reorder_qty ? num(r.reorder_qty) : '–'}</td></tr>`;
-      }).join('') + '</tbody></table></div>';
-  }
-
-  function renderExpiring() {
-    if (!state.expiring.length) { $('panel').innerHTML = stateBox('ph-seal-check', 'No batches are close to expiry'); return; }
-    $('panel').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th>Batch</th><th>Expires</th><th class="num">Units</th></tr></thead><tbody>' +
-      state.expiring.map((r) => {
-        const left = Number(r.days_left);
-        const p = r.is_expired ? '<span class="pill gone">Expired</span>' : `<span class="pill ${left <= 14 ? 'gone' : 'soon'}">${left} ${left === 1 ? 'day' : 'days'}</span>`;
-        return `<tr><td><div class="cell-main"><span class="thumb"><i class="ph-duotone ph-hourglass-high"></i></span><b class="trunc">${esc(r.name)}</b></div></td><td>${esc(r.batch_number)}</td>` +
-          `<td style="white-space:nowrap">${p} <small style="color:var(--hd-muted)">${dateLbl(r.expiry_date)}</small></td><td class="num">${num(r.on_hand)}</td></tr>`;
       }).join('') + '</tbody></table></div>';
   }
 
@@ -146,7 +133,7 @@
       else $('panel').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>When</th><th>Product</th><th>Type</th><th>Location</th><th class="num">Qty</th><th>By</th><th>Note</th></tr></thead><tbody>' +
         rows.map((r) => {
           const t = TYPES[r.movement_type] || [r.movement_type, 'off'], q = Number(r.quantity);
-          return `<tr><td style="white-space:nowrap">${fmt.when(r.created_at)}</td><td><div class="trunc"><b>${esc(r.product_name)}</b>${r.batch_number ? `<small class="d-block text-muted fw-normal">Batch ${esc(r.batch_number)}</small>` : ''}</div></td>` +
+          return `<tr><td style="white-space:nowrap">${fmt.when(r.created_at)}</td><td><div class="trunc"><b>${esc(r.product_name)}</b></div></td>` +
             `<td><span class="pill ${t[1]}">${t[0]}</span></td><td>${esc(locName.get(r.location_id) || '')}</td><td class="num ${q > 0 ? 'q-in' : 'q-out'}">${q > 0 ? '+' : ''}${num(q)}</td>` +
             `<td>${esc(r.user_name || '–')}</td><td class="trunc">${esc(r.note || '')}</td></tr>`;
         }).join('') + '</tbody></table></div>';
@@ -198,26 +185,17 @@
     const p = $('m-results')._items.find((x) => String(x.id) === b.dataset.id);
     $('m-results').hidden = true; $('m-search').value = '';
     if (state.m.lines.some((l) => l.product_id === p.id)) return;
-    const line = { product_id: p.id, name: p.name, sku: p.sku, tracks: p.tracks_expiry, imei: Boolean(p.requires_imei), imeis: '', batches: [], batch_id: '', qty: '' };
+    const line = { product_id: p.id, name: p.name, sku: p.sku, imei: Boolean(p.requires_imei), imeis: '', qty: '' };
     state.m.lines.push(line); drawLines();
-    if (line.tracks) loadBatches(line);
   });
 
-  async function loadBatches(line) {
-    try {
-      line.batches = await api(`/stock/batches?product_id=${line.product_id}&location_id=${srcLoc()}` + (state.m.mode === 'adjust' ? '&with_stock=false' : ''));
-      if (!line.batches.some((b) => String(b.id) === String(line.batch_id))) line.batch_id = '';
-    } catch (e) { line.batches = []; }
-    drawLines();
-  }
-  $('m-loc').addEventListener('change', () => { state.m.lines.forEach((l) => { if (l.tracks) loadBatches(l); }); drawLines(); });
+  $('m-loc').addEventListener('change', () => drawLines());
 
   function drawLines() {
     const { lines, mode } = state.m;
     $('m-lines').innerHTML = lines.length ? lines.map((l, i) =>
       `<div class="line"><div class="nm"><b>${esc(l.name)}</b><small>${esc(l.sku)} · ${num(onHand(l.product_id, srcLoc()))} on hand here</small></div>` +
-      (l.imei ? `<textarea class="form-control" rows="1" data-i="${i}" data-f="imeis" placeholder="${mode === 'adjust' ? 'IMEIs to add (+) or remove (-), one per unit' : 'IMEIs being moved, one per unit'}">${esc(l.imeis)}</textarea>` : l.tracks ? `<select class="form-select" data-i="${i}" data-f="batch_id"><option value="">${mode === 'adjust' ? 'Pick a batch' : 'Earliest expiry first'}</option>` +
-        l.batches.map((b) => `<option value="${b.id}"${String(b.id) === String(l.batch_id) ? ' selected' : ''}>${esc(b.batch_number)} · ${b.expiry_date ? dateLbl(b.expiry_date) : 'no expiry'} · ${num(b.on_hand)}</option>`).join('') + '</select>' : '<div class="small text-muted">No batch</div>') +
+      (l.imei ? `<textarea class="form-control" rows="1" data-i="${i}" data-f="imeis" placeholder="${mode === 'adjust' ? 'IMEIs to add (+) or remove (-), one per unit' : 'IMEIs being moved, one per unit'}">${esc(l.imeis)}</textarea>` : '<div class="small text-muted"></div>') +
       `<input class="form-control" type="number" step="1" ${mode === 'transfer' ? 'min="1"' : ''} data-i="${i}" data-f="qty" placeholder="${mode === 'adjust' ? '+5 or -3' : 'Qty'}" value="${esc(l.qty)}" aria-label="Quantity">` +
       `<button class="mini-btn" type="button" data-rm="${i}" aria-label="Remove"><i class="ph-bold ph-x"></i></button></div>`).join('')
       : '<div class="empty">Search above to add products</div>';
@@ -239,12 +217,12 @@
     if (mode === 'adjust') {
       path = '/stock/adjustments';
       body = { location_id: Number(srcLoc()), reason: $('m-reason').value, notes: $('m-notes').value.trim() || undefined,
-        items: lines.map((l) => ({ product_id: l.product_id, quantity_change: Number(l.qty), batch_id: l.batch_id ? Number(l.batch_id) : undefined, imeis: l.imei ? l.imeis : undefined })) };
+        items: lines.map((l) => ({ product_id: l.product_id, quantity_change: Number(l.qty), imeis: l.imei ? l.imeis : undefined })) };
     } else {
       if (srcLoc() === $('m-to').value) return showErr('m-error', 'Choose two different locations.');
       path = '/stock/transfers';
       body = { from_location_id: Number(srcLoc()), to_location_id: Number($('m-to').value), notes: $('m-notes').value.trim() || undefined,
-        items: lines.map((l) => ({ product_id: l.product_id, quantity: Number(l.qty), batch_id: l.batch_id ? Number(l.batch_id) : undefined, imeis: l.imei ? l.imeis : undefined })) };
+        items: lines.map((l) => ({ product_id: l.product_id, quantity: Number(l.qty), imeis: l.imei ? l.imeis : undefined })) };
     }
     const btn = $('m-save'); btn.disabled = true;
     try { await api(path, { method: 'POST', body }); mModal.hide(); flash(mode === 'adjust' ? 'Stock adjustment saved.' : 'Stock transferred.'); loadBase(); }
@@ -296,7 +274,7 @@
     const items = t.items.filter((i) => !q || i.product_name.toLowerCase().includes(q) || String(i.sku).toLowerCase().includes(q));
     if (!items.length) { $('c-body').innerHTML = stateBox('ph-clipboard-text', 'Nothing to show'); return; }
     $('c-body').innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th class="num">System</th><th class="num">Counted</th><th class="num">Variance</th></tr></thead><tbody>' +
-      items.map((i) => `<tr><td><div class="trunc"><b>${esc(i.product_name)}</b><small class="d-block text-muted fw-normal">${esc(i.sku)}${i.batch_number ? ' · Batch ' + esc(i.batch_number) : ''}</small></div></td><td class="num">${num(i.system_qty)}</td>` +
+      items.map((i) => `<tr><td><div class="trunc"><b>${esc(i.product_name)}</b><small class="d-block text-muted fw-normal">${esc(i.sku)}</small></div></td><td class="num">${num(i.system_qty)}</td>` +
         `<td class="num">${open ? `<input class="form-control count-in d-inline-block" type="number" min="0" step="1" data-item="${i.id}" value="${i.counted_qty == null ? '' : i.counted_qty}" aria-label="Counted quantity">` : (i.counted_qty == null ? '–' : num(i.counted_qty))}</td>` +
         `<td class="num" id="var-${i.id}">${varCell(i)}</td></tr>`).join('') + '</tbody></table></div>';
   }

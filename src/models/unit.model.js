@@ -147,9 +147,33 @@ async function search({ q, status, product_id, location_id, limit = 50, offset =
   return { items: rows.map(({ total_count, ...r }) => r), total: rows[0] ? rows[0].total_count : 0 };
 }
 
+/**
+ * Bulk look-up used by the "add phones" screen while the person scans: for each IMEI says whether it is already
+ * registered (and where it stands). Does not throw on bad input, it just reports it.
+ * Returns [{ imei, exists, status?, product_name?, can_add }] in the order given (duplicates removed).
+ */
+async function inspect(list, db) {
+  const seen = new Set(); const imeis = [];
+  for (const raw of Array.isArray(list) ? list : []) {
+    const s = String(raw == null ? '' : raw).replace(/\s+/g, '').toUpperCase();
+    if (s && !seen.has(s)) { seen.add(s); imeis.push(s); }
+  }
+  if (!imeis.length) return [];
+  const { rows } = await query(
+    `SELECT u.imei, u.status, p.name AS product_name FROM product_units u JOIN products p ON p.id = u.product_id
+      WHERE u.imei = ANY($1::text[])`, [imeis.slice(0, 500)], db);
+  const known = new Map(rows.map((r) => [r.imei, r]));
+  return imeis.slice(0, 500).map((imei) => {
+    const k = known.get(imei);
+    // A device that was sold / returned to the supplier can come back in; one already in stock cannot be added twice.
+    return { imei, valid: IMEI_RE.test(imei), exists: Boolean(k), status: k ? k.status : null, product_name: k ? k.product_name : null,
+      can_add: IMEI_RE.test(imei) && !(k && k.status === 'in_stock') };
+  });
+}
+
 async function getByImei(imei, db) {
   const { rows: [r] } = await query(`${DETAIL_SQL} WHERE u.imei = $1`, [imei], db);
   return r || null;
 }
 
-module.exports = { toList, normalise, expectCount, registerUnits, removeUnits, moveUnits, takeForSale, releaseSale, returnUnits, search, getByImei };
+module.exports = { toList, normalise, expectCount, registerUnits, removeUnits, moveUnits, takeForSale, releaseSale, returnUnits, search, getByImei, inspect };

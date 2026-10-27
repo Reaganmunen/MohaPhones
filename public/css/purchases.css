@@ -25,3 +25,10 @@
 .v-meta b { font-size: .9rem; }
 .v-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 @media (max-width: 575.98px) { .filters { grid-template-columns: 1fr; } }
+/* receive goods: IMEI entry under each phone line */
+.ie-toggle { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--hd-line); background: #fafaf8; font-weight: 700; font-size: .8rem; white-space: nowrap; }
+.ie-toggle.done { border-color: var(--hd-success); color: #146c43; background: #e8f7ef; }
+.ie-toggle .ph-duotone { font-size: 1.1rem; }
+.lines-tbl tr.ie-line td { padding: 0 6px 14px; border-top: 0; }
+.lines-tbl .ie-box { background: #f7f7f4; border-radius: 16px; padding: 14px; }
+.lines-tbl.po-mode tr.ie-line { display: none; }

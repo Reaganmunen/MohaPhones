@@ -46,7 +46,7 @@ exports.create = wrap(async (req, res) => {
   const opening = v.optInt(b.opening_stock, 'opening_stock', { min: 0 }) || 0;
   const location_id = opening > 0 ? (v.optId(b.location_id, 'location_id') || (await models.defaultLocationId())) : undefined;
 
-  const product = await models.products.create(b, { opening_stock: opening, location_id, user_id: req.user.id, imeis: models.units.toList(b.imeis) });
+  const product = await models.products.create(b, { opening_stock: opening, location_id, user_id: req.user.id, imeis: models.devices.toList(b.imeis) });
   await audit.record(req, 'create', 'product', product.id, null, { sku: product.sku, name: product.name, selling_price: product.selling_price });
   created(res, product);
 });

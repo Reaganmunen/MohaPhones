@@ -10,7 +10,6 @@ exports.update = wrap(async (req, res) => {
   if (b.loyalty_points_per_kes !== undefined) v.num(b.loyalty_points_per_kes, 'loyalty_points_per_kes', { min: 0 });
   if (b.loyalty_kes_per_point !== undefined) v.num(b.loyalty_kes_per_point, 'loyalty_kes_per_point', { min: 0 });
   if (b.frequent_customer_min_visits !== undefined) v.int(b.frequent_customer_min_visits, 'frequent_customer_min_visits', { min: 1 });
-  if (b.expiry_alert_days !== undefined) v.int(b.expiry_alert_days, 'expiry_alert_days', { min: 1 });
   const before = await models.settings.get();
   const after = await models.settings.update(b);
   const keys = Object.keys(b);

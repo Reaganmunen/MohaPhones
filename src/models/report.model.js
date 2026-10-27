@@ -67,7 +67,6 @@ async function dashboard(db) {
        (SELECT COALESCE(SUM(total),0) FROM sales, today WHERE status = 'completed' AND sold_at >= today.start) AS today_sales,
        (SELECT COUNT(*)::INT FROM sales, today WHERE status = 'completed' AND sold_at >= today.start) AS today_count,
        (SELECT COUNT(*)::INT FROM v_low_stock) AS low_stock_count,
-       (SELECT COUNT(*)::INT FROM v_expiring_batches) AS expiring_batches,
        (SELECT COALESCE(SUM(total - amount_paid),0) FROM sales WHERE status = 'completed' AND amount_paid < total) AS unpaid_total,
        (SELECT COUNT(*)::INT FROM customers WHERE is_active) AS customers,
        (SELECT COALESCE(SUM(stock_value),0) FROM v_stock_valuation) AS stock_value`, [], db);

@@ -6,7 +6,7 @@
   const $ = (id) => document.getElementById(id);
 
   const PAY_LABEL = { cash: 'Cash', mpesa: 'M-Pesa', card: 'Card', bank_transfer: 'Bank transfer', loyalty: 'Loyalty points' };
-  const REASONS = { defective: 'Defective', wrong_item: 'Wrong item', changed_mind: 'Changed mind', expired: 'Expired', other: 'Other' };
+  const REASONS = { defective: 'Defective', wrong_item: 'Wrong item', changed_mind: 'Changed mind', other: 'Other' };
   const REFUNDS = { cash: 'Cash', mpesa: 'M-Pesa', store_credit: 'Store credit', none: 'No refund' };
 
   const state = { page: 1, limit: 20, pages: 1, total: 0, rows: [], range: '30', reqId: 0, sale: null };

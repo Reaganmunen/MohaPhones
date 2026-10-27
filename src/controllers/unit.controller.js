@@ -5,7 +5,7 @@ const { paginate } = require('../utils/sql');
 const { AppError } = require('../utils/errors');
 const audit = require('../utils/audit');
 
-const U = () => models.units;
+const U = () => models.devices;
 
 /** Device register: ?q= &status= &product_id= &location_id= */
 exports.list = wrap(async (req, res) => {
@@ -27,6 +27,13 @@ exports.check = wrap(async (req, res) => {
   if (!unit) throw new AppError(`IMEI ${imei} is not in the system`, 404, 'NOT_FOUND');
   const location_id = v.optId(req.query.location_id, 'location_id') || (await models.defaultLocationId());
   ok(res, { ...unit, available: unit.status === 'in_stock' && unit.location_id === location_id });
+});
+
+/** Body: { imeis: [..] | text }. Tells the add-phones screen which of the scanned IMEIs are already in the system. */
+exports.validate = wrap(async (req, res) => {
+  const list = U().toList((req.body || {}).imeis) || [];
+  if (list.length > 500) throw v.bad('Check at most 500 IMEIs at a time');
+  ok(res, await U().inspect(list));
 });
 
 /** Add devices to stock by IMEI (stock goes up by the same number). Body: { product_id, imeis[] | text, location_id?, notes? } */
